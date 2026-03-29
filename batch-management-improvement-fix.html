@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Batch Management Improvement — June HealthSync</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:system-ui,-apple-system,sans-serif;background:#f1f5f9;padding:24px;min-height:100vh;}
+.page-label{font-size:12px;color:#718096;text-align:center;margin-bottom:12px;}
+.modal{background:#fff;border:1px solid #e2e8f0;border-radius:12px;max-width:700px;margin:0 auto;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.07);}
+.modal-header{padding:16px 20px 14px;border-bottom:1px solid #e2e8f0;}
+.modal-title{font-size:16px;font-weight:600;color:#1a202c;}
+.modal-sub{font-size:13px;color:#718096;margin-top:3px;}
+.modal-body{padding:18px 20px;}
+.modal-footer{padding:12px 20px;border-top:1px solid #e2e8f0;display:flex;justify-content:flex-end;gap:8px;}
+label{font-size:11px;color:#718096;display:block;margin-bottom:3px;}
+input,select{border:1px solid #cbd5e0;border-radius:7px;padding:0 9px;font-size:13px;background:#fff;color:#1a202c;height:32px;font-family:inherit;width:100%;}
+input:focus,select:focus{outline:none;border-color:#028090;}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;}
+.divider{border:none;border-top:1px solid #e2e8f0;margin:14px 0;}
+.btn-primary{background:#028090;color:#fff;border:none;border-radius:8px;padding:8px 18px;font-size:13px;font-weight:500;cursor:pointer;}
+.btn-primary:hover{opacity:.88;}
+.btn-ghost{background:transparent;color:#1a202c;border:1px solid #e2e8f0;border-radius:8px;padding:8px 18px;font-size:13px;cursor:pointer;}
+.btn-ghost:hover{background:#f8fafc;}
+.section-label{font-size:11px;font-weight:600;color:#718096;text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px;}
+.search-wrap{position:relative;margin-bottom:8px;}
+.search-wrap input{padding-left:30px;}
+.s-icon{position:absolute;left:9px;top:50%;transform:translateY(-50%);width:13px;height:13px;stroke:#a0aec0;fill:none;stroke-width:2;pointer-events:none;}
+.dropdown{border:1px solid #cbd5e0;border-radius:8px;background:#fff;margin-top:4px;overflow:hidden;box-shadow:0 4px 12px rgba(0,0,0,0.07);}
+.dd-item{padding:9px 12px;cursor:pointer;border-bottom:1px solid #f0f4f6;}
+.dd-item:last-child{border-bottom:none;}
+.dd-item:hover{background:#f8fafc;}
+.dd-name{font-size:13px;font-weight:500;color:#1a202c;}
+.dd-meta{font-size:11px;color:#718096;margin-top:1px;}
+.nf-panel{background:#f8fafc;border-radius:8px;padding:10px 12px;margin-bottom:10px;}
+.nf-title{font-size:13px;font-weight:500;color:#1a202c;margin-bottom:2px;}
+.nf-sub{font-size:12px;color:#718096;margin-bottom:8px;}
+.inline-panel{border:1.5px solid #028090;border-radius:10px;padding:14px 16px;margin-bottom:12px;background:#fff;}
+.ip-header{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:12px;}
+.ip-title{font-size:13px;font-weight:500;color:#028090;}
+.ip-sub{font-size:11px;color:#718096;margin-top:2px;}
+.step-bar{display:flex;align-items:center;gap:5px;margin-bottom:0;}
+.sdot{width:6px;height:6px;border-radius:50%;}
+.sdot.on{background:#028090;}.sdot.off{background:#cbd5e0;}
+.step-sep{color:#cbd5e0;font-size:10px;}
+.step-txt{font-size:11px;}.step-txt.on{color:#028090;font-weight:500;}.step-txt.off{color:#718096;}
+.ip-grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;}
+.ip-grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:10px;}
+.ip-field label{font-size:11px;color:#718096;display:block;margin-bottom:3px;}
+.ip-field input,.ip-field select{height:30px;font-size:12px;}
+.nafdac-notice{background:#fefce8;border-radius:6px;padding:7px 10px;font-size:11px;color:#854d0e;margin-bottom:8px;}
+.generic-sel{background:#f0fff4;border-radius:6px;padding:7px 10px;font-size:12px;color:#065f46;display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;}
+.price-note{font-size:11px;color:#38a169;margin-bottom:6px;display:flex;align-items:center;gap:5px;}
+.table-wrap{overflow-x:auto;margin-bottom:6px;}
+table{width:100%;border-collapse:collapse;}
+th{font-size:11px;color:#718096;font-weight:500;text-align:left;padding:6px 7px;border-bottom:1px solid #e2e8f0;white-space:nowrap;}
+td{padding:6px 6px;border-bottom:1px solid #f0f4f6;vertical-align:middle;}
+tr:last-child td{border-bottom:none;}
+td input,td select{height:27px;font-size:12px;padding:0 5px;}
+.row-name{font-size:13px;font-weight:500;color:#1a202c;white-space:nowrap;}
+.row-meta{font-size:11px;color:#718096;margin-top:1px;}
+.remove-btn{background:none;border:none;color:#e53e3e;font-size:15px;cursor:pointer;padding:0 3px;}
+.new-badge{display:inline-block;font-size:10px;background:#fef3c7;color:#92400e;padding:1px 6px;border-radius:20px;margin-left:5px;vertical-align:middle;}
+.done-row td{background:#f0fff4;}.done-row td:first-child{border-left:3px solid #028090;}
+.pending-row td{background:#f0fdf4;}.pending-row td:first-child{border-left:3px solid #028090;}
+.empty-state{text-align:center;padding:2rem 1rem;border:1px dashed #e2e8f0;border-radius:8px;font-size:13px;color:#a0aec0;margin-bottom:10px;}
+.hint-text{font-size:11px;color:#718096;margin-top:4px;}
+.cancel-x{background:none;border:none;cursor:pointer;color:#718096;font-size:13px;padding:0;}
+.row-dot{width:8px;height:8px;border-radius:50%;display:inline-block;flex-shrink:0;}
+.row-dot.complete{background:#38a169;}.row-dot.incomplete{background:#cbd5e0;}
+.validation-banner{background:#fff3cd;border:1px solid #ffc107;border-radius:7px;padding:9px 12px;font-size:12px;color:#856404;margin-bottom:10px;display:none;}
+.success-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.35);align-items:center;justify-content:center;z-index:50;}
+.success-card{background:#fff;border-radius:12px;padding:28px 24px;width:300px;text-align:center;box-shadow:0 8px 32px rgba(0,0,0,0.15);}
+.s-icon{width:48px;height:48px;background:#E1F5EE;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 14px;}
+.s-actions{display:flex;gap:8px;margin-top:16px;}
+.s-outline{flex:1;padding:9px;border:1px solid #e2e8f0;border-radius:8px;background:none;font-size:13px;cursor:pointer;}
+.s-solid{flex:1;padding:9px;border:none;border-radius:8px;background:#028090;color:#fff;font-size:13px;font-weight:500;cursor:pointer;}
+</style>
+</head>
+<body>
+<p class="page-label">June HealthSync — Batch Management Improvement · Interactive sketch · Try: search "para" to add existing drug, search "xyz" to trigger new drug setup</p>
+<div class="modal">
+  <div class="modal-header">
+    <div class="modal-title">New batch</div>
+    <div class="modal-sub">Record a new purchase — add all drugs from this delivery</div>
+  </div>
+  <div class="modal-body">
+    <div class="row2">
+      <div><label>Batch number <span style="font-weight:400;color:#a0aec0">(optional)</span></label><input type="text" placeholder="Auto-generated if empty" /></div>
+      <div>
+        <label>Supplier <span style="font-weight:400;color:#a0aec0">(optional)</span></label>
+        <input type="text" id="sup-input" placeholder="Search or type a name…" onfocus="document.getElementById('sup-dd').style.display='block'" onblur="setTimeout(()=>document.getElementById('sup-dd').style.display='none',150)" />
+        <div id="sup-dd" style="display:none;" class="dropdown">
+          <div class="dd-item" onmousedown="document.getElementById('sup-input').value='Emzor Pharma'"><div class="dd-name">Emzor Pharma</div></div>
+          <div class="dd-item" onmousedown="document.getElementById('sup-input').value='Fidson Healthcare'"><div class="dd-name">Fidson Healthcare</div></div>
+          <div class="dd-item" onmousedown="document.getElementById('sup-input').value='May & Baker'"><div class="dd-name">May &amp; Baker</div></div>
+        </div>
+      </div>
+    </div>
+    <div class="divider"></div>
+    <div class="section-label">Drugs in this batch</div>
+    <div class="search-wrap">
+      <svg class="s-icon" viewBox="0 0 16 16"><circle cx="6.5" cy="6.5" r="4.5"/><line x1="10" y1="10" x2="14" y2="14"/></svg>
+      <input type="text" id="drug-search" placeholder="Search drug name, brand, or manufacturer…" oninput="handleSearch(this.value)" onblur="setTimeout(closeDd,150)" />
+    </div>
+    <div id="drug-dd" style="display:none;" class="dropdown"></div>
+    <div id="nf-wrap" style="display:none;"></div>
+    <div id="inline-panel" style="display:none;"></div>
+    <div id="validation-banner" class="validation-banner"></div>
+    <div id="table-wrap"></div>
+  </div>
+  <div class="modal-footer">
+    <button class="btn-ghost">Cancel</button>
+    <button class="btn-primary" id="create-btn" onclick="attemptCreate()">Create batch</button>
+  </div>
+</div>
+<div class="success-overlay" id="success">
+  <div class="success-card">
+    <div class="s-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#085041" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg></div>
+    <div style="font-size:15px;font-weight:500;color:#1a202c;">Batch created</div>
+    <div style="font-size:13px;color:#718096;margin-top:4px;" id="done-sub"></div>
+    <div class="s-actions"><button class="s-outline" onclick="resetAll()">New batch</button><button class="s-solid" onclick="resetAll()">Done</button></div>
+  </div>
+</div>
+<script>
+const CATALOG=[{name:'M&B Paracetamol',meta:'M&B · Big Smiles Pharma, Ilorin',cost:'2800',retail:'3800',wholesale:'3500'},{name:'AQUACLAV',meta:'Big Smiles Pharma, Ilorin',cost:'1200',retail:'1800',wholesale:'1600'},{name:'Longtan',meta:'Ace Pharmaceutical · Big Smiles Pharma',cost:'850',retail:'1100',wholesale:'1000'},{name:'Amoxicillin 500mg',meta:'Emzor · Big Smiles Pharma',cost:'600',retail:'900',wholesale:'800'}];
+let batch=[{name:'Lisinopril 10mg',meta:'Fidson · Big Smiles Pharma, Ilorin',cost:'350',retail:'550',wholesale:'490',isNew:false},{name:'Metformin 500mg',meta:'May & Baker · Big Smiles Pharma, Ilorin',cost:'420',retail:'650',wholesale:'580',isNew:false}];
+let pending=null;
+function handleSearch(val){
+  const dd=document.getElementById('drug-dd'),nf=document.getElementById('nf-wrap');
+  if(val.length<2){dd.style.display='none';nf.style.display='none';return;}
+  const m=CATALOG.filter(d=>d.name.toLowerCase().includes(val.toLowerCase())&&!batch.find(b=>b.name===d.name));
+  if(m.length){dd.style.display='block';nf.style.display='none';dd.innerHTML=m.map(d=>`<div class="dd-item" onmousedown="addExisting('${d.name}')"><div class="dd-name">${d.name}</div><div class="dd-meta">${d.meta}</div></div>`).join('');}
+  else{dd.style.display='none';nf.style.display='block';nf.innerHTML=`<div class="nf-panel"><div class="nf-title">"${val}" isn't in your pharmacy yet</div><div class="nf-sub">Set it up once and it'll be available for all future batches.</div><button class="btn-primary" style="font-size:12px;padding:6px 12px;" onclick="openInline('${val}')">Set up "${val}" →</button></div>`;}
+}
+function closeDd(){document.getElementById('drug-dd').style.display='none';}
+function addExisting(name){const d=CATALOG.find(x=>x.name===name);if(!d)return;batch.push({...d,isNew:false});document.getElementById('drug-search').value='';document.getElementById('drug-dd').style.display='none';document.getElementById('nf-wrap').style.display='none';renderAll();}
+function openInline(name){
+  pending=name;document.getElementById('nf-wrap').style.display='none';document.getElementById('drug-search').value='';
+  const p=document.getElementById('inline-panel');p.style.display='block';
+  p.innerHTML=`<div class="inline-panel"><div class="ip-header"><div><div class="ip-title">Setting up "${name}"</div><div class="ip-sub">One-time setup — available in all future batches</div></div><div style="display:flex;align-items:center;gap:10px;"><div class="step-bar"><span class="sdot on"></span><span class="step-txt on">Drug details</span><span class="step-sep">›</span><span class="sdot off"></span><span class="step-txt off">Inventory</span><span class="step-sep">›</span><span class="sdot off"></span><span class="step-txt off">Back to batch</span></div><button class="cancel-x" onclick="closeInline()">✕</button></div></div>
+  <div class="ip-grid2"><div class="ip-field"><label>Brand name *</label><input type="text" value="${name}" id="ip-brand" /></div><div class="ip-field"><label>Drug type *</label><select><option>Tablet</option><option>Capsule</option><option>Syrup</option><option>Injection</option></select></div></div>
+  <div class="ip-field" style="margin-bottom:10px;"><label>Link to generic drug *</label><div class="nafdac-notice">No NAFDAC results for "${name}" — search platform generics below.</div><div id="gen-sel" style="display:none;" class="generic-sel"><span id="gen-label"></span><button onclick="clearGen()" style="background:none;border:none;cursor:pointer;color:#065f46;font-size:14px;">×</button></div><div id="gen-wrap"><div class="search-wrap" style="margin-bottom:0;"><svg class="s-icon" viewBox="0 0 16 16"><circle cx="6.5" cy="6.5" r="4.5"/><line x1="10" y1="10" x2="14" y2="14"/></svg><input type="text" id="gen-input" placeholder="Search generics e.g. Co-trimoxazole…" oninput="handleGen(this.value)" style="height:30px;font-size:12px;" /></div><div id="gen-dd" style="display:none;" class="dropdown"><div class="dd-item" onmousedown="pickGen('Co-trimoxazole','antibacterial · tablet, suspension')"><div class="dd-name">Co-trimoxazole</div><div class="dd-meta">antibacterial · tablet, suspension</div></div><div class="dd-item" onmousedown="pickGen('Amoxicillin + Clavulanic acid','antibacterial · tablet, injection')"><div class="dd-name">Amoxicillin + Clavulanic acid</div><div class="dd-meta">antibacterial · tablet, injection</div></div></div></div></div>
+  <div class="ip-grid3"><div class="ip-field"><label>Strength (optional)</label><input type="text" placeholder="e.g. 500mg" /></div><div class="ip-field"><label>Store *</label><select><option>Big Smiles Pharma, Ilorin</option><option>Big Smiles Pharma, Benin</option></select></div><div class="ip-field"><label>Units / packet</label><input type="number" value="1" /></div></div>
+  <div style="border-top:1px solid #e2e8f0;padding-top:10px;margin-bottom:10px;"><div style="font-size:11px;color:#718096;margin-bottom:6px;">Pricing — store profit margins active (Retail 50% · Wholesale 25%)</div><div class="ip-grid3"><div class="ip-field"><label>Cost price (₦)</label><input type="text" id="ip-cost" placeholder="0" oninput="ipCalc()" /></div><div class="ip-field"><label>Retail (₦)</label><input type="text" id="ip-retail" placeholder="Auto" /></div><div class="ip-field"><label>Wholesale (₦)</label><input type="text" id="ip-wholesale" placeholder="Auto" /></div></div><div class="ip-grid2" style="margin-bottom:0;"><div class="ip-field"><label>Qty purchased (packets)</label><input type="number" value="1" /></div><div class="ip-field"><label>Expiry date</label><input type="date" /></div></div></div>
+  <div style="display:flex;align-items:center;justify-content:space-between;"><div style="font-size:11px;color:#718096;">Completing this adds the drug to inventory and to this batch.</div><button class="btn-primary" style="font-size:12px;padding:7px 14px;" onclick="completeInline()">Add to batch →</button></div></div>`;
+  renderAll();
+}
+function closeInline(){document.getElementById('inline-panel').style.display='none';pending=null;renderAll();}
+function handleGen(val){document.getElementById('gen-dd').style.display=val.length>1?'block':'none';}
+function pickGen(name){document.getElementById('gen-wrap').style.display='none';document.getElementById('gen-dd').style.display='none';document.getElementById('gen-sel').style.display='flex';document.getElementById('gen-label').textContent='Generic: '+name;}
+function clearGen(){document.getElementById('gen-sel').style.display='none';document.getElementById('gen-wrap').style.display='block';document.getElementById('gen-input').value='';}
+function ipCalc(){const c=parseFloat(document.getElementById('ip-cost').value)||0;document.getElementById('ip-retail').value=c?Math.round(c*1.5):'';document.getElementById('ip-wholesale').value=c?Math.round(c*1.25):'';}
+function completeInline(){const brand=document.getElementById('ip-brand').value||pending||'New drug';const cost=document.getElementById('ip-cost').value||'—';const retail=document.getElementById('ip-retail').value||'—';const wholesale=document.getElementById('ip-wholesale').value||'—';batch.push({name:brand,meta:'Newly set up · inventory created',cost,retail,wholesale,isNew:true});document.getElementById('inline-panel').style.display='none';pending=null;renderAll();}
+function removeRow(i){batch.splice(i,1);renderAll();}
+function renderAll(){
+  const wrap=document.getElementById('table-wrap'),hp=pending!==null;
+  if(batch.length===0&&!hp){wrap.innerHTML='<div class="empty-state">No drugs added yet. Search above to add drugs to this batch.</div>';return;}
+  wrap.innerHTML=`<div class="price-note"><svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="#38a169" stroke-width="1.5"><circle cx="6" cy="6" r="5"/><line x1="6" y1="4" x2="6" y2="6.5"/><circle cx="6" cy="8.5" r=".5" fill="#38a169"/></svg>Cost, retail and wholesale prices are pre-filled from your last batch — update any that have changed.</div><div class="table-wrap"><table style="table-layout:fixed;width:100%;"><thead><tr><th style="width:18px;"></th><th style="width:160px;">Drug</th><th style="width:168px;">Quantity</th><th style="width:100px;">Expiry *</th><th style="width:72px;">Cost (₦)</th><th style="width:72px;">Retail (₦)</th><th style="width:72px;">Wholesale (₦)</th><th style="width:24px;"></th></tr></thead><tbody>
+  ${batch.map((d,i)=>d.isNew?`<tr class="done-row"><td><span class="row-dot complete"></span></td><td><div class="row-name">${d.name}<span class="new-badge">new</span></div><div class="row-meta" style="color:#38a169;">✓ Added to inventory</div></td><td colspan="5" style="font-size:11px;color:#718096;">Quantity and pricing recorded during setup — no action needed here</td><td></td></tr>`:`<tr id="brow-${i}"><td><span class="row-dot incomplete" id="dot-${i}"></span></td><td><div class="row-name" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${d.name}</div><div class="row-meta" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${d.meta}</div></td><td><div style="display:grid;grid-template-columns:1fr 1fr;gap:3px;"><div><div style="font-size:9px;color:#a0aec0;margin-bottom:1px;">Cartons</div><input type="number" value="0" min="0" style="width:100%;height:24px;font-size:11px;padding:0 4px;" oninput="checkRow(${i})" /></div><div><div style="font-size:9px;color:#a0aec0;margin-bottom:1px;">Boxes</div><input type="number" value="0" min="0" style="width:100%;height:24px;font-size:11px;padding:0 4px;" oninput="checkRow(${i})" /></div><div><div style="font-size:9px;color:#a0aec0;margin-bottom:1px;">Packets</div><input type="number" value="1" min="0" style="width:100%;height:24px;font-size:11px;padding:0 4px;" oninput="checkRow(${i})" /></div><div><div style="font-size:9px;color:#a0aec0;margin-bottom:1px;">Units</div><input type="number" value="0" min="0" style="width:100%;height:24px;font-size:11px;padding:0 4px;" oninput="checkRow(${i})" /></div></div></td><td><input type="date" style="width:100%;font-size:11px;height:27px;padding:0 4px;" id="exp-${i}" onchange="checkRow(${i})" /></td><td><input type="text" value="${d.cost}" style="width:100%;height:27px;font-size:12px;padding:0 5px;" oninput="checkRow(${i})" id="cost-${i}" /></td><td><input type="text" value="${d.retail}" style="width:100%;height:27px;font-size:12px;padding:0 5px;" oninput="checkRow(${i})" /></td><td><input type="text" value="${d.wholesale}" style="width:100%;height:27px;font-size:12px;padding:0 5px;" oninput="checkRow(${i})" /></td><td><button class="remove-btn" onclick="removeRow(${i})">×</button></td></tr>`).join('')}
+  ${hp?`<tr class="pending-row"><td></td><td><div class="row-name" style="color:#028090;">${pending}</div><div class="row-meta">Setting up above ↑</div></td><td colspan="5" style="font-size:11px;color:#028090;">Complete the setup panel above to fill this slot</td><td><button class="remove-btn" onclick="closeInline()">×</button></td></tr>`:''}
+  </tbody></table></div><div class="hint-text">${batch.length} drug(s)${hp?' · 1 pending setup':''} · Dot turns green when expiry and quantity are filled</div>`;
+}
+function checkRow(i){
+  const expiry=document.getElementById('exp-'+i);
+  const cost=document.getElementById('cost-'+i);
+  const dot=document.getElementById('dot-'+i);
+  if(!expiry||!dot)return;
+  const row=document.getElementById('brow-'+i);
+  const inputs=row?row.querySelectorAll('input[type="number"]'):[];
+  const hasQty=[...inputs].some(inp=>parseFloat(inp.value)>0);
+  const hasExpiry=expiry.value!=='';
+  const hasCost=cost&&cost.value.trim()!=='';
+  const complete=hasQty&&hasExpiry&&hasCost;
+  dot.className='row-dot '+(complete?'complete':'incomplete');
+}
+function attemptCreate(){
+  const incomplete=batch.filter(d=>!d.isNew);
+  const banner=document.getElementById('validation-banner');
+  const missing=[];
+  incomplete.forEach((d,i)=>{
+    const expiry=document.getElementById('exp-'+i);
+    if(!expiry||expiry.value==='')missing.push(d.name);
+  });
+  if(missing.length>0){
+    banner.style.display='block';
+    banner.textContent='Missing expiry date for: '+missing.join(', ')+'. Fill in before creating the batch.';
+    banner.scrollIntoView({behavior:'smooth',block:'nearest'});
+    return;
+  }
+  banner.style.display='none';
+  showDone();
+}
+function showDone(){document.getElementById('done-sub').textContent=batch.length+' drug(s) · Inventory updated';document.getElementById('success').style.display='flex';}
+function resetAll(){batch=[{name:'Lisinopril 10mg',meta:'Fidson · Big Smiles Pharma, Ilorin',cost:'350',retail:'550',wholesale:'490',isNew:false},{name:'Metformin 500mg',meta:'May & Baker · Big Smiles Pharma, Ilorin',cost:'420',retail:'650',wholesale:'580',isNew:false}];pending=null;document.getElementById('drug-search').value='';document.getElementById('drug-dd').style.display='none';document.getElementById('nf-wrap').style.display='none';document.getElementById('inline-panel').style.display='none';document.getElementById('success').style.display='none';renderAll();}
+renderAll();
+</script>
+</body>
+</html>
