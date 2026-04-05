@@ -1,0 +1,583 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Drug Priority Engine — June PMS</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
+<style>
+:root {
+  --navy: #0D1F2D;
+  --teal: #028090;
+  --teal2: #02C39A;
+  --teal-l: #E8F8F5;
+  --teal-ll: #F0FBFA;
+  --bg: #EEF2F5;
+  --white: #FFFFFF;
+  --grey: #6B7280;
+  --grey-l: #9CA3AF;
+  --grey-ll: #D1D5DB;
+  --border: #E5E7EB;
+  --border-l: #F3F4F6;
+  --black: #111827;
+  --red: #DC2626;
+  --red-l: #FEE2E2;
+  --red-d: #991B1B;
+  --red-dk: #7F1D1D;
+  --red-dkl: #FFF0F0;
+  --amber: #B45309;
+  --amber-l: #FEF3C7;
+  --amber-ll: #FFFBEB;
+  --green: #16A34A;
+  --green-l: #D1FAE5;
+  --green-d: #065F46;
+  --blue: #1D4ED8;
+  --blue-l: #EFF6FF;
+  --f: 'Inter', sans-serif;
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: var(--f); background: var(--bg); color: var(--black); font-size: 14px; line-height: 1.5; }
+
+/* ── App shell top nav (context only) ── */
+.app-nav {
+  background: var(--white);
+  border-bottom: 1px solid var(--border);
+  height: 52px;
+  display: flex;
+  align-items: center;
+  padding: 0 32px;
+  gap: 24px;
+  position: sticky;
+  top: 0;
+  z-index: 20;
+}
+.nav-logo {
+  display: flex; align-items: center; gap: 8px;
+  font-weight: 700; font-size: 15px; color: var(--navy);
+  border-right: 1px solid var(--border); padding-right: 24px; margin-right: 8px;
+}
+.logo-mark { width: 28px; height: 28px; background: var(--teal); border-radius: 7px; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 700; color: white; }
+.nav-link { font-size: 13px; color: var(--grey); font-weight: 500; cursor: pointer; padding: 4px 0; border-bottom: 2px solid transparent; }
+.nav-link:hover { color: var(--navy); }
+.nav-link.active { color: var(--teal); border-bottom-color: var(--teal); }
+.nav-right { margin-left: auto; display: flex; align-items: center; gap: 10px; }
+.nav-store { font-size: 12px; color: var(--grey); background: var(--bg); border: 1px solid var(--border); border-radius: 6px; padding: 5px 10px; }
+.nav-avatar { width: 30px; height: 30px; border-radius: 50%; background: var(--teal-l); color: var(--teal); font-size: 11px; font-weight: 700; display: flex; align-items: center; justify-content: center; }
+
+/* ── Page wrapper ── */
+.page { padding: 32px 40px; max-width: 1400px; }
+
+/* ── Page header ── */
+.page-header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 28px; }
+.page-title { font-size: 20px; font-weight: 700; color: var(--navy); margin-bottom: 4px; }
+.page-subtitle { font-size: 13px; color: var(--grey); }
+.page-actions { display: flex; align-items: center; gap: 10px; }
+.btn-badge {
+  display: flex; align-items: center; gap: 6px;
+  font-size: 13px; font-weight: 500; color: var(--teal);
+  background: var(--teal-l); border: 1px solid rgba(2,128,144,.2);
+  border-radius: 6px; padding: 7px 14px; cursor: pointer; font-family: var(--f);
+}
+.btn-primary {
+  display: flex; align-items: center; gap: 7px;
+  font-size: 13px; font-weight: 600; color: white;
+  background: var(--teal); border: none; border-radius: 8px;
+  padding: 8px 18px; cursor: pointer; font-family: var(--f);
+}
+.btn-primary:hover { opacity: .9; }
+
+/* ── Summary tiles ── */
+.tiles { display: flex; gap: 14px; margin-bottom: 24px; }
+.tile {
+  flex: 1; background: var(--white); border-radius: 12px;
+  padding: 18px 20px; cursor: pointer;
+  border: 1.5px solid var(--border);
+  transition: border-color .15s, box-shadow .15s;
+  display: flex; align-items: center; gap: 14px;
+}
+.tile:hover { border-color: var(--grey-ll); }
+.tile.active { border-width: 2px; }
+.tile-act.active   { border-color: var(--red);   background: #FFFAFA; }
+.tile-week.active  { border-color: var(--amber);  background: var(--amber-ll); }
+.tile-mon.active   { border-color: var(--blue);   background: var(--blue-l); }
+.tile-good.active  { border-color: var(--green);  background: #FAFFF8; }
+.tile-reorder.active { border-color: var(--teal); background: var(--teal-ll); }
+.tile-ico {
+  width: 46px; height: 46px; border-radius: 11px;
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+}
+.tile-act   .tile-ico { background: var(--red-l); }
+.tile-week  .tile-ico { background: var(--amber-l); }
+.tile-mon   .tile-ico { background: var(--blue-l); }
+.tile-good  .tile-ico { background: var(--green-l); }
+.tile-reorder .tile-ico { background: var(--teal-l); }
+.tile-n { font-size: 26px; font-weight: 700; line-height: 1; }
+.tile-lbl { font-size: 12px; font-weight: 500; margin-top: 4px; }
+.tile-act   .tile-n, .tile-act   .tile-lbl { color: var(--red-d); }
+.tile-week  .tile-n, .tile-week  .tile-lbl { color: var(--amber); }
+.tile-mon   .tile-n, .tile-mon   .tile-lbl { color: var(--blue); }
+.tile-good  .tile-n, .tile-good  .tile-lbl { color: var(--green-d); }
+.tile-reorder .tile-n, .tile-reorder .tile-lbl { color: var(--teal); }
+
+/* ── Card ── */
+.card { background: var(--white); border-radius: 12px; border: 1px solid var(--border); overflow: hidden; }
+.card-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 16px 24px; border-bottom: 1px solid var(--border);
+}
+.card-title { font-size: 14px; font-weight: 700; color: var(--navy); }
+.card-count { font-size: 13px; color: var(--grey); margin-left: 8px; font-weight: 400; }
+.card-controls { display: flex; gap: 10px; align-items: center; }
+.sel {
+  font-family: var(--f); font-size: 12px; color: var(--navy);
+  border: 1px solid var(--border); border-radius: 6px;
+  padding: 6px 28px 6px 10px; background: var(--bg);
+  appearance: none; cursor: pointer; outline: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 16 16'%3E%3Cpath d='M4 6l4 4 4-4' stroke='%236B7280' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat; background-position: right 8px center;
+}
+
+/* ── Table ── */
+.tbl { width: 100%; border-collapse: collapse; }
+.tbl thead th {
+  text-align: left; font-size: 11px; font-weight: 600; color: var(--grey-l);
+  text-transform: uppercase; letter-spacing: .07em;
+  padding: 10px 24px; border-bottom: 1px solid var(--border);
+  background: #FAFBFC; white-space: nowrap;
+}
+.tbl tbody tr { border-bottom: 1px solid var(--border-l); }
+.tbl tbody tr:last-child { border-bottom: none; }
+.tbl tbody tr:not(.no-hover):hover > td > .row-wrap { background: #FAFBFC; }
+
+/* ── Drug row ── */
+.row-wrap { display: flex; align-items: center; padding: 14px 24px; cursor: pointer; transition: background .08s; gap: 0; }
+.col-drug { width: 260px; flex-shrink: 0; padding-right: 16px; }
+.col-reason { flex: 1; padding-right: 20px; }
+.col-stock { width: 130px; flex-shrink: 0; padding-right: 16px; }
+.col-action { width: 240px; flex-shrink: 0; display: flex; align-items: center; justify-content: flex-end; gap: 8px; }
+
+.drug-name { font-size: 13px; font-weight: 600; color: var(--navy); }
+.drug-reason { font-size: 12px; color: var(--grey); margin-top: 2px; line-height: 1.45; }
+.drug-reason.expired { color: var(--red-dk); font-weight: 500; }
+.stock-num { font-size: 13px; font-weight: 600; color: var(--navy); }
+.stock-num.zero { color: var(--red); }
+.stock-num.low  { color: var(--amber); }
+.stock-sub { font-size: 11px; color: var(--grey-l); margin-top: 1px; }
+
+/* ── Buttons ── */
+.btn {
+  font-family: var(--f); font-size: 12px; font-weight: 600;
+  border-radius: 6px; padding: 6px 14px; cursor: pointer;
+  border: none; white-space: nowrap; transition: opacity .1s;
+}
+.btn:hover { opacity: .85; }
+.btn-red      { background: var(--red-l);   color: var(--red-d); }
+.btn-reddark  { background: var(--red-dkl); color: var(--red-dk); border: 1px solid #FECACA; }
+.btn-amber    { background: var(--amber-l); color: var(--amber); }
+.btn-teal     { background: var(--teal);    color: white; }
+.btn-outline  { background: transparent; border: 1.5px solid var(--teal); color: var(--teal); }
+.btn-ghost    { background: transparent; border: 1.5px solid var(--border); color: var(--grey); }
+.btn-sm       { font-size: 11px; padding: 5px 10px; }
+.btn-link     { background: none; border: none; font-family: var(--f); font-size: 12px; color: var(--grey); cursor: pointer; padding: 6px 4px; }
+.btn-link:hover { color: var(--teal); }
+.chevron      { transition: transform .18s; flex-shrink: 0; }
+.chevron.open { transform: rotate(180deg); }
+
+/* ── Row accent left border ── */
+.accent-red  { border-left: 3px solid var(--red);    padding-left: 21px; }
+.accent-dark { border-left: 3px solid var(--red-dk); padding-left: 21px; background: #FFFAFA; }
+
+/* ── Expand panel ── */
+.expand-panel {
+  background: #F8FAFC; border-top: 1px solid var(--border-l);
+  padding: 18px 24px 18px 27px;
+  border-left: 3px solid var(--red);
+}
+.suggest-strip {
+  background: var(--teal-l); border: 1px solid rgba(2,128,144,.18);
+  border-radius: 9px; padding: 12px 16px; margin-bottom: 14px;
+  display: flex; align-items: center; gap: 12px;
+}
+.suggest-circle { width: 32px; height: 32px; background: var(--teal); border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.suggest-lbl  { font-size: 11px; color: var(--teal); font-weight: 500; }
+.suggest-qty  { font-size: 16px; font-weight: 700; color: var(--teal); }
+.suggest-note { font-size: 11px; font-weight: 400; opacity: .75; }
+.suggest-sup  { margin-left: auto; font-size: 12px; color: var(--teal); cursor: pointer; white-space: nowrap; }
+.suggest-sup:hover { text-decoration: underline; }
+.stats-grid   { display: grid; grid-template-columns: repeat(4,1fr); gap: 10px; margin-bottom: 14px; }
+.stat { background: var(--white); border: 1px solid var(--border); border-radius: 8px; padding: 10px 14px; }
+.stat-lbl { font-size: 10px; font-weight: 600; color: var(--grey-l); text-transform: uppercase; letter-spacing: .06em; margin-bottom: 4px; }
+.stat-val { font-size: 15px; font-weight: 700; color: var(--navy); }
+.stat-sub { font-size: 11px; color: var(--grey-l); margin-top: 2px; }
+.expand-acts { display: flex; gap: 8px; }
+
+/* ── Reorder table ── */
+.rtbl { width: 100%; border-collapse: collapse; }
+.rtbl thead th {
+  text-align: left; font-size: 11px; font-weight: 600; color: var(--grey-l);
+  text-transform: uppercase; letter-spacing: .07em;
+  padding: 10px 24px; border-bottom: 1px solid var(--border); background: #FAFBFC;
+}
+.rtbl tbody tr { border-bottom: 1px solid var(--border-l); }
+.rtbl tbody tr:last-child { border-bottom: none; }
+.rtbl tbody tr:hover td { background: #FAFBFC; }
+.rtbl td { padding: 13px 24px; vertical-align: middle; }
+.dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; margin-right: 8px; vertical-align: middle; flex-shrink: 0; }
+.dot-r { background: var(--red); }
+.dot-a { background: var(--amber); }
+.r-name    { font-size: 13px; font-weight: 600; color: var(--navy); }
+.r-qty     { font-size: 12px; color: var(--grey); margin-top: 2px; }
+.r-sup     { font-size: 12px; color: var(--teal); }
+.r-sup.no  { color: var(--grey-l); font-style: italic; }
+.r-acts    { display: flex; gap: 8px; }
+.ordered   { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--green-d); }
+.ordered svg { width: 14px; height: 14px; }
+.po-footer {
+  padding: 16px 24px; border-top: 1px solid var(--border);
+  background: var(--teal-ll); display: flex; align-items: center; justify-content: space-between;
+}
+.po-footer-text strong { display: block; font-size: 14px; font-weight: 700; color: var(--navy); margin-bottom: 2px; }
+.po-footer-text span   { font-size: 12px; color: var(--teal); }
+.btn-generate { background: var(--teal); color: white; font-family: var(--f); font-size: 13px; font-weight: 600; border: none; border-radius: 8px; padding: 11px 28px; cursor: pointer; }
+.btn-generate:hover { opacity: .9; }
+
+/* ── Empty state ── */
+.empty { padding: 60px 24px; text-align: center; }
+.empty-ico { width: 56px; height: 56px; background: var(--green-l); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 16px; }
+
+/* ── Screen switching ── */
+.screen { display: none; }
+.screen.on { display: block; }
+
+/* ── Dimmed ordered row ── */
+.row-done { opacity: .5; }
+</style>
+</head>
+<body>
+
+<!-- App top nav (context) -->
+<nav class="app-nav">
+  <div class="nav-logo">
+    <div class="logo-mark">J</div>
+    June PMS
+  </div>
+  <span class="nav-link">Dashboard</span>
+  <span class="nav-link active">Inventory</span>
+  <span class="nav-link">Sales</span>
+  <span class="nav-link">Patients</span>
+  <span class="nav-link">Reports</span>
+  <span class="nav-link">Suppliers</span>
+  <div class="nav-right">
+    <span class="nav-store">Big Smiles Pharma, Benin City</span>
+    <div class="nav-avatar">AO</div>
+  </div>
+</nav>
+
+<div class="page">
+
+  <!-- Page header -->
+  <div class="page-header">
+    <div>
+      <div class="page-title">Drug Priority Engine</div>
+      <div class="page-subtitle">Tells you which drugs need attention today — no scores, just actions.</div>
+    </div>
+    <div class="page-actions">
+      <button class="btn-badge">
+        <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M8 2l1.5 4.5H14l-3.5 2.5 1.5 4.5L8 11l-4 2.5 1.5-4.5L2 6.5h4.5z"/></svg>
+        Professional+ Feature
+      </button>
+      <button class="btn-primary">
+        <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="white" stroke-width="1.8" stroke-linecap="round"><path d="M14 8A6 6 0 1 1 8 2a6 6 0 0 1 4.2 1.7L14 2v4h-4l1.5-1.5"/></svg>
+        Recompute Scores
+      </button>
+    </div>
+  </div>
+
+  <!-- Summary tiles -->
+  <div class="tiles">
+    <div class="tile tile-act active" id="tile-act" onclick="go('act',this)">
+      <div class="tile-ico">
+        <svg width="22" height="22" viewBox="0 0 16 16" fill="none" stroke="#991B1B" stroke-width="1.8" stroke-linecap="round"><circle cx="8" cy="8" r="6"/><path d="M8 5v3.5M8 11v.5"/></svg>
+      </div>
+      <div><div class="tile-n">12</div><div class="tile-lbl">Act Today</div></div>
+    </div>
+    <div class="tile tile-week" id="tile-week" onclick="go('week',this)">
+      <div class="tile-ico">
+        <svg width="22" height="22" viewBox="0 0 16 16" fill="none" stroke="#B45309" stroke-width="1.8" stroke-linecap="round"><rect x="2" y="3" width="12" height="11" rx="1.5"/><path d="M5 2v2M11 2v2M2 7h12"/></svg>
+      </div>
+      <div><div class="tile-n">34</div><div class="tile-lbl">This Week</div></div>
+    </div>
+    <div class="tile tile-mon" id="tile-mon" onclick="go('mon',this)">
+      <div class="tile-ico">
+        <svg width="22" height="22" viewBox="0 0 16 16" fill="none" stroke="#1D4ED8" stroke-width="1.8" stroke-linecap="round"><circle cx="8" cy="8" r="6"/><path d="M8 5v3l2 2"/></svg>
+      </div>
+      <div><div class="tile-n">156</div><div class="tile-lbl">Monitor</div></div>
+    </div>
+    <div class="tile tile-good" id="tile-good" onclick="go('good',this)">
+      <div class="tile-ico">
+        <svg width="22" height="22" viewBox="0 0 16 16" fill="none" stroke="#065F46" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 8l4 4 8-8"/></svg>
+      </div>
+      <div><div class="tile-n">3,388</div><div class="tile-lbl">All Good</div></div>
+    </div>
+    <div class="tile tile-reorder" id="tile-reorder" onclick="go('reorder',this)">
+      <div class="tile-ico">
+        <svg width="22" height="22" viewBox="0 0 16 16" fill="none" stroke="#028090" stroke-width="1.8" stroke-linecap="round"><path d="M2 4h12M2 8h8M2 12h10"/><path d="M13 10l2 2-2 2"/></svg>
+      </div>
+      <div><div class="tile-n">18</div><div class="tile-lbl">Reorder List</div></div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════ ACT TODAY ═══════════════════ -->
+  <div class="screen on" id="screen-act">
+    <div class="card">
+      <div class="card-header">
+        <div>
+          <span class="card-title">Act Today</span>
+          <span class="card-count">— 12 drugs need immediate attention</span>
+        </div>
+        <div class="card-controls">
+          <select class="sel"><option>All Stores</option><option>Ilorin</option><option>Benin City</option></select>
+          <select class="sel"><option>All Categories</option><option>Antibiotics</option><option>Analgesics</option><option>Antihypertensives</option></select>
+        </div>
+      </div>
+
+      <table class="tbl">
+        <thead>
+          <tr>
+            <th style="width:260px">Drug</th>
+            <th>Reason</th>
+            <th style="width:130px">Stock</th>
+            <th style="width:240px;text-align:right;padding-right:24px">Action</th>
+          </tr>
+        </thead>
+        <tbody>
+
+          <!-- ROW 1 — EXPANDED -->
+          <tr id="tr-1" style="border-bottom:none">
+            <td colspan="4" style="padding:0">
+              <div class="row-wrap accent-red" id="rw-1" onclick="toggle(1)">
+                <div class="col-drug"><div class="drug-name">Cipronol 500mg</div></div>
+                <div class="col-reason"><div class="drug-reason">Out of stock. Minimum is 3 units.</div></div>
+                <div class="col-stock"><div class="stock-num zero">0 units</div><div class="stock-sub">Min: 3</div></div>
+                <div class="col-action">
+                  <button class="btn btn-red">Restock</button>
+                  <button class="btn-link">View</button>
+                  <svg class="chevron open" id="ch-1" width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="var(--grey-l)" stroke-width="1.5" stroke-linecap="round"><path d="M4 6l4 4 4-4"/></svg>
+                </div>
+              </div>
+              <div class="expand-panel" id="ep-1">
+                <div class="suggest-strip">
+                  <div class="suggest-circle">
+                    <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="white" stroke-width="2" stroke-linecap="round"><path d="M8 2v12M2 8h12"/></svg>
+                  </div>
+                  <div>
+                    <div class="suggest-lbl">Suggested reorder quantity</div>
+                    <div class="suggest-qty">60 units <span class="suggest-note">— covers 30 days at current sales rate</span></div>
+                  </div>
+                  <div class="suggest-sup">Supplier: Fidson Healthcare →</div>
+                </div>
+                <div class="stats-grid">
+                  <div class="stat"><div class="stat-lbl">Current Stock</div><div class="stat-val" style="color:var(--red)">0 units</div><div class="stat-sub">Min: 3 units</div></div>
+                  <div class="stat"><div class="stat-lbl">Daily Sales (30d avg)</div><div class="stat-val">2 units/day</div><div class="stat-sub">7d avg: 3 units/day</div></div>
+                  <div class="stat"><div class="stat-lbl">Days Remaining</div><div class="stat-val" style="color:var(--red)">0 days</div><div class="stat-sub">Out of stock now</div></div>
+                  <div class="stat"><div class="stat-lbl">Nearest Expiry</div><div class="stat-val">None</div><div class="stat-sub">No batches in stock</div></div>
+                </div>
+                <div class="expand-acts">
+                  <button class="btn btn-teal">Restock</button>
+                  <button class="btn btn-outline btn-sm">Adjust Stock</button>
+                  <button class="btn btn-ghost btn-sm">View Drug</button>
+                  <button class="btn btn-ghost btn-sm">Set Minimum</button>
+                </div>
+              </div>
+            </td>
+          </tr>
+
+          <!-- EXPIRED ROW -->
+          <tr>
+            <td colspan="4" style="padding:0">
+              <div class="row-wrap accent-dark">
+                <div class="col-drug"><div class="drug-name">Augmentin 625mg</div></div>
+                <div class="col-reason"><div class="drug-reason expired">Batch of 24 units expired 3 days ago. Remove from stock.</div></div>
+                <div class="col-stock"><div class="stock-num">24 units</div><div class="stock-sub">Min: 5</div></div>
+                <div class="col-action">
+                  <button class="btn btn-reddark">Remove Expired</button>
+                  <button class="btn-link">View</button>
+                </div>
+              </div>
+            </td>
+          </tr>
+
+          <tr><td colspan="4" style="padding:0"><div class="row-wrap" onclick="toggle(3)"><div class="col-drug"><div class="drug-name">Amoxicillin 250mg Syrup</div></div><div class="col-reason"><div class="drug-reason">Runs out in 4 days at current sales rate.</div></div><div class="col-stock"><div class="stock-num low">28 units</div><div class="stock-sub">Min: 10</div></div><div class="col-action"><button class="btn btn-red">Restock</button><button class="btn-link">View</button><svg class="chevron" id="ch-3" width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="var(--grey-l)" stroke-width="1.5" stroke-linecap="round"><path d="M4 6l4 4 4-4"/></svg></div></div></td></tr>
+
+          <tr><td colspan="4" style="padding:0"><div class="row-wrap"><div class="col-drug"><div class="drug-name">Indiclav 625 Tablet</div></div><div class="col-reason"><div class="drug-reason">Batch of 18 units expires in 14 days.</div></div><div class="col-stock"><div class="stock-num">18 units</div><div class="stock-sub">Min: 3</div></div><div class="col-action"><button class="btn btn-amber">Check Expiry</button><button class="btn-link">View</button></div></div></td></tr>
+
+          <tr><td colspan="4" style="padding:0"><div class="row-wrap"><div class="col-drug"><div class="drug-name">Amlodipine 5mg</div></div><div class="col-reason"><div class="drug-reason">6 units remaining. Minimum stock level is 10.</div></div><div class="col-stock"><div class="stock-num low">6 units</div><div class="stock-sub">Min: 10</div></div><div class="col-action"><button class="btn btn-red">Restock</button><button class="btn-link">View</button></div></div></td></tr>
+
+          <tr><td colspan="4" style="padding:0"><div class="row-wrap"><div class="col-drug"><div class="drug-name">Metformin 500mg</div></div><div class="col-reason"><div class="drug-reason">Batch of 60 units expires in 22 days.</div></div><div class="col-stock"><div class="stock-num">60 units</div><div class="stock-sub">Min: 20</div></div><div class="col-action"><button class="btn btn-amber">Check Expiry</button><button class="btn-link">View</button></div></div></td></tr>
+
+          <tr><td colspan="4" style="padding:0"><div class="row-wrap"><div class="col-drug"><div class="drug-name">Tramadol 100mg Capsule</div></div><div class="col-reason"><div class="drug-reason">Runs out in 3 days at current sales rate.</div></div><div class="col-stock"><div class="stock-num zero">12 units</div><div class="stock-sub">Min: 10</div></div><div class="col-action"><button class="btn btn-red">Restock</button><button class="btn-link">View</button></div></div></td></tr>
+
+          <tr><td colspan="4" style="padding:0"><div class="row-wrap"><div class="col-drug"><div class="drug-name">Neme ORS Sachets</div></div><div class="col-reason"><div class="drug-reason">11 units remaining. Minimum stock level is 50.</div></div><div class="col-stock"><div class="stock-num low">11 units</div><div class="stock-sub">Min: 50</div></div><div class="col-action"><button class="btn btn-red">Restock</button><button class="btn-link">View</button></div></div></td></tr>
+
+          <tr><td colspan="4" style="padding:0"><div class="row-wrap"><div class="col-drug"><div class="drug-name">Ceftriaxone 1g Injection</div></div><div class="col-reason"><div class="drug-reason">Out of stock. No minimum configured — set one to improve tracking.</div></div><div class="col-stock"><div class="stock-num zero">0 units</div><div class="stock-sub" style="color:var(--grey-l);font-style:italic">Min: not set</div></div><div class="col-action"><button class="btn btn-red">Restock</button><button class="btn btn-ghost btn-sm">Set Min</button><button class="btn-link">View</button></div></div></td></tr>
+
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ═══════════════════ THIS WEEK ═══════════════════ -->
+  <div class="screen" id="screen-week">
+    <div class="card">
+      <div class="card-header">
+        <div><span class="card-title">This Week</span><span class="card-count">— 34 drugs to address within the next 7–21 days</span></div>
+        <div class="card-controls"><select class="sel"><option>All Stores</option></select><select class="sel"><option>All Categories</option></select></div>
+      </div>
+      <table class="tbl">
+        <thead><tr><th style="width:260px">Drug</th><th>Reason</th><th style="width:130px">Stock</th><th style="width:240px;text-align:right;padding-right:24px">Action</th></tr></thead>
+        <tbody>
+          <tr><td colspan="4" style="padding:0"><div class="row-wrap"><div class="col-drug"><div class="drug-name">Paracetamol 500mg</div></div><div class="col-reason"><div class="drug-reason">Runs out in 11 days at current sales rate.</div></div><div class="col-stock"><div class="stock-num low">88 units</div><div class="stock-sub">Min: 30</div></div><div class="col-action"><button class="btn btn-amber">Restock</button><button class="btn-link">View</button></div></div></td></tr>
+          <tr><td colspan="4" style="padding:0"><div class="row-wrap"><div class="col-drug"><div class="drug-name">Lisinopril 10mg</div></div><div class="col-reason"><div class="drug-reason">Batch of 45 units expires in 38 days.</div></div><div class="col-stock"><div class="stock-num">45 units</div><div class="stock-sub">Min: 15</div></div><div class="col-action"><button class="btn btn-amber">Check Expiry</button><button class="btn-link">View</button></div></div></td></tr>
+          <tr><td colspan="4" style="padding:0"><div class="row-wrap"><div class="col-drug"><div class="drug-name">Metronidazole 200mg</div></div><div class="col-reason"><div class="drug-reason">Runs out in 8 days at current sales rate.</div></div><div class="col-stock"><div class="stock-num low">64 units</div><div class="stock-sub">Min: 20</div></div><div class="col-action"><button class="btn btn-amber">Restock</button><button class="btn-link">View</button></div></div></td></tr>
+          <tr><td colspan="4" style="padding:0"><div class="row-wrap"><div class="col-drug"><div class="drug-name">Salbutamol Inhaler</div></div><div class="col-reason"><div class="drug-reason">14 units remaining. Minimum stock level is 20.</div></div><div class="col-stock"><div class="stock-num low">14 units</div><div class="stock-sub">Min: 20</div></div><div class="col-action"><button class="btn btn-amber">Restock</button><button class="btn-link">View</button></div></div></td></tr>
+          <tr><td colspan="4" style="padding:0"><div class="row-wrap"><div class="col-drug"><div class="drug-name">Omeprazole 20mg</div></div><div class="col-reason"><div class="drug-reason">Batch of 30 units expires in 55 days.</div></div><div class="col-stock"><div class="stock-num">30 units</div><div class="stock-sub">Min: 10</div></div><div class="col-action"><button class="btn btn-amber">Check Expiry</button><button class="btn-link">View</button></div></div></td></tr>
+          <tr><td colspan="4" style="padding:0"><div class="row-wrap"><div class="col-drug"><div class="drug-name">Atenolol 50mg</div></div><div class="col-reason"><div class="drug-reason">Runs out in 14 days at current sales rate.</div></div><div class="col-stock"><div class="stock-num low">56 units</div><div class="stock-sub">Min: 15</div></div><div class="col-action"><button class="btn btn-amber">Restock</button><button class="btn-link">View</button></div></div></td></tr>
+          <tr><td colspan="4" style="padding:0"><div class="row-wrap"><div class="col-drug"><div class="drug-name">Diclofenac 50mg Tablet</div></div><div class="col-reason"><div class="drug-reason">18 units remaining. Minimum stock level is 30.</div></div><div class="col-stock"><div class="stock-num low">18 units</div><div class="stock-sub">Min: 30</div></div><div class="col-action"><button class="btn btn-amber">Restock</button><button class="btn-link">View</button></div></div></td></tr>
+          <tr><td colspan="4" style="padding:0"><div class="row-wrap"><div class="col-drug"><div class="drug-name">Cotrimoxazole 480mg</div></div><div class="col-reason"><div class="drug-reason">Batch of 90 units expires in 44 days.</div></div><div class="col-stock"><div class="stock-num">90 units</div><div class="stock-sub">Min: 20</div></div><div class="col-action"><button class="btn btn-amber">Check Expiry</button><button class="btn-link">View</button></div></div></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ═══════════════════ MONITOR ═══════════════════ -->
+  <div class="screen" id="screen-mon">
+    <div class="card">
+      <div class="card-header">
+        <div><span class="card-title">Monitor</span><span class="card-count">— 156 drugs. No action needed now.</span></div>
+        <div class="card-controls"><select class="sel"><option>All Stores</option></select><select class="sel"><option>All Categories</option></select></div>
+      </div>
+      <table class="tbl">
+        <thead><tr><th style="width:260px">Drug</th><th>Reason</th><th style="width:130px">Stock</th><th style="width:160px;text-align:right;padding-right:24px">Days Left</th></tr></thead>
+        <tbody>
+          <tr><td colspan="4" style="padding:0"><div class="row-wrap"><div class="col-drug"><div class="drug-name">Paracetamol 120mg Syrup</div></div><div class="col-reason"><div class="drug-reason">Runs out in 28 days at current sales rate.</div></div><div class="col-stock"><div class="stock-num">340 units</div><div class="stock-sub">Min: 50</div></div><div style="width:160px;display:flex;justify-content:flex-end;align-items:center;gap:8px;flex-shrink:0"><span style="font-size:13px;font-weight:600;color:var(--blue)">28 days</span><button class="btn-link">View</button></div></div></td></tr>
+          <tr><td colspan="4" style="padding:0"><div class="row-wrap"><div class="col-drug"><div class="drug-name">Vitamin C 500mg</div></div><div class="col-reason"><div class="drug-reason">Batch of 200 units expires in 72 days.</div></div><div class="col-stock"><div class="stock-num">200 units</div><div class="stock-sub">Min: 30</div></div><div style="width:160px;display:flex;justify-content:flex-end;align-items:center;gap:8px;flex-shrink:0"><span style="font-size:13px;font-weight:600;color:var(--blue)">72 days</span><button class="btn-link">View</button></div></div></td></tr>
+          <tr><td colspan="4" style="padding:0"><div class="row-wrap"><div class="col-drug"><div class="drug-name">Chloroquine 150mg</div></div><div class="col-reason"><div class="drug-reason">Runs out in 35 days at current sales rate.</div></div><div class="col-stock"><div class="stock-num">420 units</div><div class="stock-sub">Min: 50</div></div><div style="width:160px;display:flex;justify-content:flex-end;align-items:center;gap:8px;flex-shrink:0"><span style="font-size:13px;font-weight:600;color:var(--blue)">35 days</span><button class="btn-link">View</button></div></div></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ═══════════════════ ALL GOOD ═══════════════════ -->
+  <div class="screen" id="screen-good">
+    <div class="card">
+      <div class="card-header"><div><span class="card-title">All Good</span><span class="card-count">— 3,388 drugs in good shape</span></div></div>
+      <div class="empty">
+        <div class="empty-ico">
+          <svg width="24" height="24" viewBox="0 0 16 16" fill="none" stroke="#16A34A" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 8l4 4 8-8"/></svg>
+        </div>
+        <div style="font-size:16px;font-weight:700;color:var(--navy);margin-bottom:8px">3,388 drugs are in good shape</div>
+        <div style="font-size:13px;color:var(--grey);max-width:420px;margin:0 auto;line-height:1.65">All have adequate stock levels, no expiry risk in the next 90 days, and stock above their configured minimums. Nothing to do here — check back tomorrow.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════ REORDER LIST ═══════════════════ -->
+  <div class="screen" id="screen-reorder">
+    <div class="card">
+      <div class="card-header">
+        <div><span class="card-title">Reorder List</span><span class="card-count">— 18 drugs · 3 suppliers</span></div>
+        <div class="card-controls"><select class="sel"><option>Sort by urgency</option><option>Sort by supplier</option><option>Sort by quantity</option></select></div>
+      </div>
+      <table class="rtbl">
+        <thead>
+          <tr>
+            <th style="width:280px">Drug</th>
+            <th style="width:180px">Order Quantity</th>
+            <th style="width:220px">Supplier</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr class="row-done">
+            <td><span class="dot dot-r"></span><span class="r-name">Cipronol 500mg</span></td>
+            <td><div class="r-qty">60 units</div></td>
+            <td><div class="r-sup">Fidson Healthcare</div></td>
+            <td><div class="ordered"><svg viewBox="0 0 16 16" fill="none" stroke="#16A34A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 8l4 4 8-8"/></svg>Ordered today at 8:42am</div></td>
+          </tr>
+          <tr>
+            <td><span class="dot dot-r"></span><span class="r-name">Amoxicillin 250mg Syrup</span></td>
+            <td><div class="r-qty">48 units</div></td>
+            <td><div class="r-sup no">No supplier linked — add one</div></td>
+            <td><div class="r-acts"><button class="btn btn-ghost btn-sm">Mark Ordered</button><button class="btn btn-teal btn-sm">Create PO</button></div></td>
+          </tr>
+          <tr>
+            <td><span class="dot dot-a"></span><span class="r-name">Paracetamol 500mg</span></td>
+            <td><div class="r-qty">180 units</div></td>
+            <td><div class="r-sup">Emzor Pharma</div></td>
+            <td><div class="r-acts"><button class="btn btn-ghost btn-sm">Mark Ordered</button><button class="btn btn-teal btn-sm">Create PO</button></div></td>
+          </tr>
+          <tr>
+            <td><span class="dot dot-r"></span><span class="r-name">Amlodipine 5mg</span></td>
+            <td><div class="r-qty">90 units</div></td>
+            <td><div class="r-sup">GSK Nigeria</div></td>
+            <td><div class="r-acts"><button class="btn btn-ghost btn-sm">Mark Ordered</button><button class="btn btn-teal btn-sm">Create PO</button></div></td>
+          </tr>
+          <tr>
+            <td><span class="dot dot-a"></span><span class="r-name">Metronidazole 200mg</span></td>
+            <td><div class="r-qty">120 units</div></td>
+            <td><div class="r-sup">Emzor Pharma</div></td>
+            <td><div class="r-acts"><button class="btn btn-ghost btn-sm">Mark Ordered</button><button class="btn btn-teal btn-sm">Create PO</button></div></td>
+          </tr>
+          <tr>
+            <td><span class="dot dot-a"></span><span class="r-name">Atenolol 50mg</span></td>
+            <td><div class="r-qty">60 units</div></td>
+            <td><div class="r-sup">May &amp; Baker</div></td>
+            <td><div class="r-acts"><button class="btn btn-ghost btn-sm">Mark Ordered</button><button class="btn btn-teal btn-sm">Create PO</button></div></td>
+          </tr>
+          <tr>
+            <td><span class="dot dot-a"></span><span class="r-name">Diclofenac 50mg</span></td>
+            <td><div class="r-qty">90 units</div></td>
+            <td><div class="r-sup no">No supplier linked — add one</div></td>
+            <td><div class="r-acts"><button class="btn btn-ghost btn-sm">Mark Ordered</button><button class="btn btn-teal btn-sm">Create PO</button></div></td>
+          </tr>
+          <tr>
+            <td><span class="dot dot-r"></span><span class="r-name">Tramadol 100mg Capsule</span></td>
+            <td><div class="r-qty">60 units</div></td>
+            <td><div class="r-sup">Fidson Healthcare</div></td>
+            <td><div class="r-acts"><button class="btn btn-ghost btn-sm">Mark Ordered</button><button class="btn btn-teal btn-sm">Create PO</button></div></td>
+          </tr>
+        </tbody>
+      </table>
+      <div class="po-footer">
+        <div class="po-footer-text">
+          <strong>Generate Full Purchase Order</strong>
+          <span>Creates one PO per supplier for all unordered items · 17 drugs across 3 suppliers</span>
+        </div>
+        <button class="btn-generate">Generate Full PO</button>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /page -->
+
+<script>
+function go(tab, el) {
+  document.querySelectorAll('.tile').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('on'));
+  document.getElementById('screen-' + tab).classList.add('on');
+}
+function toggle(n) {
+  const ep = document.getElementById('ep-' + n);
+  const ch = document.getElementById('ch-' + n);
+  const rw = document.getElementById('rw-' + n);
+  const open = ep && ep.style.display !== 'none';
+  if (ep) ep.style.display = open ? 'none' : 'block';
+  if (ch) ch.classList.toggle('open', !open);
+  if (rw) rw.classList.toggle('accent-red', !open);
+}
+// Start with row 1 expanded
+document.getElementById('ep-1').style.display = 'block';
+</script>
+</body>
+</html>
